@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using order_book_backend.Extensions;
 using order_book_backend.Model;
 using System.Net;
+using System.Text.Json;
 
 namespace order_book_backend.Controllers
 {
@@ -55,12 +57,24 @@ namespace order_book_backend.Controllers
                 using HttpResponseMessage httpResponse = await client.GetAsync($"https://www.bitstamp.net/api/v2/order_book/{request.CurrencyPair}");
                 if (httpResponse.StatusCode == HttpStatusCode.OK)
                 {
-                    return Ok(await httpResponse.Content.ReadAsStringAsync());
+                    OrderBookResponse response = JsonSerializer.Deserialize<OrderBookResponse>(await httpResponse.Content.ReadAsStringAsync(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                    // Not enough data
+                    if (response == null || response.Asks.IsEmpty() || response.Bids.IsEmpty())
+                    {
+                        _logger.LogWarning($"{nameof(OrderBookController)}.{nameof(OrderBookController.Get)} - Not enough data to send.");
+                        return NoContent();
+                    }
+
+                    // Show only up to first 100 asks and first 100 bids
+                    response.Asks = response.Asks.Count >= 100 ? response.Asks.GetRange(0, 100) : response.Asks;
+                    response.Bids = response.Bids.Count >= 100 ? response.Bids.GetRange(0, 100) : response.Bids;
+                    return Ok(response);
                 }
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                _logger.LogError($"{nameof(OrderBookController)}.{nameof(OrderBookController.Get)} - An error occurred: {ex}");
+                _logger.LogError($"{nameof(OrderBookController)}.{nameof(OrderBookController.Get)} - An error occurred: {e}");
             }
 
             return BadRequest();
