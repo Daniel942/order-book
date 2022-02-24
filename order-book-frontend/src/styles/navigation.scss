@@ -1,0 +1,28 @@
+@import '_colors.scss';
+
+nav {
+  display: flex;
+  background-color: $color-primary-1;
+  height: 80px;
+  justify-content: space-between;
+
+  a {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    color: $color-secondary-1;
+    text-decoration: unset;
+    font-weight: bold;
+
+    &:hover {
+      box-shadow: inset 0 0 10px $color-primary-2;
+    }
+
+    &.active {
+      background-color: $color-primary-2;
+      box-shadow: inset 0 0 20px $color-primary-1;
+    }
+  }
+}

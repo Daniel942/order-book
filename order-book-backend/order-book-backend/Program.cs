@@ -1,3 +1,5 @@
+using order_book_backend.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 var allowSpecificOrigins = "_allowSpecificOrigins";
@@ -10,7 +12,7 @@ builder.Services.AddCors(options =>
         });
 });
 
-// Add services to the container.
+builder.Services.AddSingleton<IOrderBookService, OrderBookService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

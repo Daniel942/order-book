@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using order_book_backend.Extensions;
 using order_book_backend.Model;
+using order_book_backend.Services;
 using System.Net;
 using System.Text.Json;
 
@@ -26,10 +27,14 @@ namespace order_book_backend.Controllers
         };
 
         private readonly ILogger<OrderBookController> _logger;
+        private readonly IOrderBookService _orderBookService;
 
-        public OrderBookController(ILogger<OrderBookController> logger)
+        public OrderBookController(
+            ILogger<OrderBookController> logger,
+            IOrderBookService orderBookService)
         {
             _logger = logger;
+            _orderBookService = orderBookService;
         }
 
         [HttpGet]
@@ -69,6 +74,13 @@ namespace order_book_backend.Controllers
                     // Show only up to first 100 asks and first 100 bids
                     response.Asks = response.Asks.Count >= 100 ? response.Asks.GetRange(0, 100) : response.Asks;
                     response.Bids = response.Bids.Count >= 100 ? response.Bids.GetRange(0, 100) : response.Bids;
+
+                    // Set unique ID
+                    response.ID = Guid.NewGuid().ToString("N");
+
+                    // Set audit log
+                    _orderBookService.Add(response);
+
                     return Ok(response);
                 }
             }
@@ -78,6 +90,49 @@ namespace order_book_backend.Controllers
             }
 
             return BadRequest();
+        }
+
+        [HttpGet]
+        [Route("api/getorderbookbyid")]
+        public async Task<IActionResult> GetByID(string id)
+        {
+            // Invalid request or currency pair
+            if (string.IsNullOrEmpty(id))
+            {
+                _logger.LogWarning($"{nameof(OrderBookController)}.{nameof(OrderBookController.GetByID)} - ID is missing.");
+                return BadRequest();
+            }
+
+            try
+            {
+                OrderBookResponse orderBook = _orderBookService.Get(id);
+                if (orderBook == null)
+                {
+                    _logger.LogWarning($"{nameof(OrderBookController)}.{nameof(OrderBookController.GetByID)} - ID is invalid.");
+                    return BadRequest();
+                }
+
+                return Ok(orderBook);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError($"{nameof(OrderBookController)}.{nameof(OrderBookController.GetByID)} - An error occurred: {e}");
+            }
+
+            return BadRequest();
+        }
+
+        [HttpGet]
+        [Route("api/getauditlog")]
+        public async Task<IActionResult> GetAuditLog()
+        {
+            List<OrderBookResponse> auditLog = _orderBookService.GetAll();
+            if (!auditLog.IsEmpty())
+            {
+                return Ok(auditLog.Select(orderBook => new { id = orderBook.ID, timestamp = orderBook.Timestamp }));
+            }
+
+            return Ok(Array.Empty<string>());
         }
     }
 }
