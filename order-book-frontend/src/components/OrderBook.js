@@ -11,6 +11,7 @@ function OrderBook() {
     const { id } = useParams("id");
 
     useEffect(() => {
+        // Display stored order book or fetch new one based on ID query parameter
         const url = id ? `https://localhost:7117/api/getorderbookbyid?id=${id}` : 'https://localhost:7117/api/getorderbook?currencypair=btceur';
         fetch(url)
             .then(response => {
