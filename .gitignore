@@ -1,3 +1,5 @@
 order-book-backend/.vs/
 order-book-backend/order-book-backend/bin/
 order-book-backend/order-book-backend/obj/
+order-book-backend/order-book-backend-tests/bin/
+order-book-backend/order-book-backend-tests/obj/

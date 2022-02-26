@@ -75,11 +75,11 @@ function OrderBook() {
             .catch(error => {
                 console.error(error);
             });
-        }, []);
+        }, [id]);
 
     return (
         <>
-            <p>Retrieved at: {retrievedAt}</p>
+            { retrievedAt && chartOptions && <p>Retrieved at: {retrievedAt}</p>}
 
             {
                 chartOptions && <HighchartsReact
