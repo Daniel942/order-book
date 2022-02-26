@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import '../styles/trade.scss';
 
-function Trade() {
+function TradeAlternative() {
     const [units, setUnits] = useState(0);
     const [asks, setAsks] = useState([]);
     const [message, setMessage] = useState('');
@@ -61,23 +61,16 @@ function Trade() {
     }, [units, asks]);
 
     useEffect(() => {
-        // Subscribe to Bitstamp order book WebSocket API
-        const subscribeStructure = {
-            'event': 'bts:subscribe',
-            'data': {
-                'channel': 'order_book_btceur'
-            }
-        };
-
-        const ws = new WebSocket('wss://ws.bitstamp.net');
+        const ws = new WebSocket('wss://localhost:7117/ws');
 
         ws.onopen = () => {
-            ws.send(JSON.stringify(subscribeStructure));
+            ws.send('btceur');
         }
 
         ws.onmessage = (event) => {
             const response = JSON.parse(event.data);
-            setAsks(response.data.asks);
+            setAsks(response);
+            ws.send('btceur');
         }
 
         ws.onclose = () => {
@@ -106,4 +99,4 @@ function Trade() {
     );
 }
 
-export default Trade;
+export default TradeAlternative;

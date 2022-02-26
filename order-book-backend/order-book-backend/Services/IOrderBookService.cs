@@ -4,8 +4,8 @@ namespace order_book_backend.Services
 {
     public interface IOrderBookService
     {
-        public void Add(OrderBookResponse orderBook);
         public List<OrderBookResponse> GetAll();
-        public OrderBookResponse Get(string id);
+        public Task<OrderBookResponse?> GetAsync(string currencyPair, bool storeOrderBook = true);
+        public OrderBookResponse? GetCached(string id);
     }
 }

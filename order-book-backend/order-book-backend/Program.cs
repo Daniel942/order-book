@@ -32,6 +32,13 @@ app.UseHttpsRedirection();
 
 app.UseCors(allowSpecificOrigins);
 
+WebSocketOptions webSocketOptions = new WebSocketOptions
+{
+    KeepAliveInterval = TimeSpan.FromMinutes(2)
+};
+
+app.UseWebSockets(webSocketOptions);
+
 app.UseAuthorization();
 
 app.MapControllers();

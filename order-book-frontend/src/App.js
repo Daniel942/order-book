@@ -6,6 +6,7 @@ import Navigation from './components/Navigation';
 import OrderBook from './components/OrderBook';
 import AuditLog from './components/AuditLog';
 import Trade from './components/Trade';
+import TradeAlternative from './components/TradeAlternative';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path='order-book/:id' element={<OrderBook />} />
         <Route path='audit-log' element= {<AuditLog />} />
         <Route path='trade' element= {<Trade />} />
+        <Route path='trade-alternative' element= {<TradeAlternative />} />
       </Routes>
     </div>
   );

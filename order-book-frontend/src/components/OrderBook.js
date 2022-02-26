@@ -22,8 +22,6 @@ function OrderBook() {
                 throw response;
             })
             .then(data => {
-                console.log(data);
-
                 // Make timestamp presentable
                 setRetrievedAt(new Date(data.timestamp * 1000).toLocaleString());
 
