@@ -42,14 +42,14 @@ namespace order_book_backend.Controllers
 
             try
             {
-                OrderBookResponse? response = await _orderBookService.GetAsync(request.CurrencyPair);
-                if (response == null)
+                OrderBook? orderBook = await _orderBookService.GetAsync(request.CurrencyPair);
+                if (orderBook == null)
                 {
                     _logger.LogWarning($"{nameof(OrderBookService)}.{nameof(OrderBookService.GetAsync)} - Not enough data to send.");
                     return NoContent();
                 }
 
-                return Ok(response);
+                return Ok(orderBook);
             }
             catch (Exception e)
             {
@@ -72,7 +72,7 @@ namespace order_book_backend.Controllers
 
             try
             {
-                OrderBookResponse? orderBook = _orderBookService.GetCached(id);
+                OrderBook? orderBook = _orderBookService.GetCached(id);
                 if (orderBook == null)
                 {
                     _logger.LogWarning($"{nameof(OrderBookController)}.{nameof(OrderBookController.GetByID)} - ID is invalid.");
@@ -93,7 +93,7 @@ namespace order_book_backend.Controllers
         [Route("api/getauditlog")]
         public IActionResult GetAuditLog()
         {
-            List<OrderBookResponse> auditLog = _orderBookService.GetAll();
+            List<OrderBook> auditLog = _orderBookService.GetAll();
             if (!auditLog.IsEmpty())
             {
                 return Ok(auditLog.Select(orderBook => new { id = orderBook.ID, timestamp = orderBook.Timestamp }));

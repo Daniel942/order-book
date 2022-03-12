@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using order_book_backend.Data;
 using order_book_backend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,7 +14,12 @@ builder.Services.AddCors(options =>
         });
 });
 
-builder.Services.AddSingleton<IOrderBookService, OrderBookService>();
+builder.Services.AddScoped<IOrderBookService, OrderBookService>();
+
+builder.Services.AddDbContext<OrderBookContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

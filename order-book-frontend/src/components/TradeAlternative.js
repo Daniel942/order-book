@@ -61,7 +61,7 @@ function TradeAlternative() {
     }, [units, asks]);
 
     useEffect(() => {
-        const ws = new WebSocket('wss://localhost:7117/ws');
+        const ws = new WebSocket('wss://localhost:7117/ws/getorderbookasks');
 
         ws.onopen = () => {
             ws.send('btceur');
@@ -69,7 +69,7 @@ function TradeAlternative() {
 
         ws.onmessage = (event) => {
             const response = JSON.parse(event.data);
-            setAsks(response);
+            setAsks(response.map(ask => [ ask.price, ask.amount ]));
             ws.send('btceur');
         }
 

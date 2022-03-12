@@ -10,72 +10,129 @@ function OrderBook() {
 
     const { id } = useParams("id");
 
-    useEffect(() => {
-        // Display stored order book or fetch new one based on ID query parameter
-        const url = id ? `https://localhost:7117/api/getorderbookbyid?id=${id}` : 'https://localhost:7117/api/getorderbook?currencypair=btceur';
-        fetch(url)
-            .then(response => {
-                if (response.ok) {
-                    return response.json();
+    function onDataReceived(data) {
+        // Make timestamp presentable
+        setRetrievedAt(new Date(data.timestamp * 1000).toLocaleString());
+
+        let totalBidAmount = 0;
+        const bids = data.bids.map(bid => {
+            // Highcharts library needs float values to work properly.
+            const price = parseFloat(bid.price);
+            const amount = parseFloat(bid.amount);
+            totalBidAmount = totalBidAmount + amount;
+            return [ price, totalBidAmount ];
+        });
+
+        let totalAskAmount = 0;
+        const asks = data.asks.map(ask => {
+            // Highcharts library needs float values to work properly.
+            const price = parseFloat(ask.price);
+            const amount = parseFloat(ask.amount);
+            totalAskAmount = totalAskAmount + amount;
+            return [ price, totalAskAmount ];
+        });
+
+        setChartOptions({
+            chart: {
+                type: 'area',
+                zoomType: 'xy'
+            },
+            title: {
+                text: 'Order book'
+            },
+            legend: {
+                enabled: false
+            },
+            tooltip: {
+                formatter: function () {
+                    return `Total ${this.y} BTC at ${this.x} EUR`
+                },
+                valueDecimals: 8
+            },
+            plotOptions: {
+                area: {
+                    fillOpacity: 0.3,
+                    lineWidth: 1,
+                    step: 'center'
                 }
-
-                throw response;
-            })
-            .then(data => {
-                // Make timestamp presentable
-                setRetrievedAt(new Date(data.timestamp * 1000).toLocaleString());
-
-                setChartOptions({
-                    chart: {
-                        type: 'area'
-                    },
+            },
+            series: [
+                {
+                    name: 'Bids',
+                    data: bids.reverse(), // Reverse bids so they are ascending
+                    color: '#1F8787',
+                    xAxis: 0,
+                },
+                {
+                    name: 'Asks',
+                    data: asks,
+                    color: '#DB3E3D',
+                    xAxis: 1
+                }
+            ],
+            xAxis: [
+                {
                     title: {
-                        text: 'Order book'
+                        text: 'Bid price'
                     },
-                    legend: {
-                        enabled: false
+                    width: '50%'
+                },
+                {
+                    title: {
+                        text: 'Ask price'
                     },
-                    tooltip: {
-                        formatter: function () {
-                            return `${this.series.name}: ${this.y} BTC at ${this.x} EUR`
-                        },
-                        valueDecimals: 8
-                    },
-                    plotOptions: {
-                        area: {
-                            fillOpacity: 0.3,
-                            lineWidth: 1,
-                            step: 'center'
-                        }
-                    },
-                    series: [
-                        {
-                            name: 'Bids',
-                            data: data.bids.map(bid => bid.map(v => parseFloat(v))).reverse(), // Highcharts library needs float values to work properly. Reverse bids so they are ascending
-                            color: '#1F8787'
-                        },
-                        {
-                            name: 'Asks',
-                            data: data.asks.map(ask => ask.map(v => parseFloat(v))), // Highcharts library needs float values to work properly.
-                            color: '#DB3E3D'
-                        }
-                    ],
-                    xAxis: {
-                        title: {
-                            text: 'Price'
-                        }
-                    },
-                    yAxis: {
-                        title: {
-                            text: 'Amount'
-                        }
+                    offset: 0,
+                    width: '50%',
+                    left: '50%'
+                }
+            ],
+            yAxis: {
+                title: {
+                    text: 'Total amount'
+                }
+            }
+        });
+    }
+
+    useEffect(() => {
+        if (id) {
+            fetch(`https://localhost:7117/api/getorderbookbyid?id=${id}`)
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
                     }
+
+                    throw response;
+                })
+                .then(data => {
+                    onDataReceived(data);
+                })
+                .catch(error => {
+                    console.error(error);
                 });
-            })
-            .catch(error => {
-                console.error(error);
-            });
-        }, [id]);
+        }
+        else {
+            const ws = new WebSocket('wss://localhost:7117/ws/getorderbook');
+    
+            ws.onopen = () => {
+                ws.send('btceur');
+            }
+    
+            ws.onmessage = (event) => {
+                const response = JSON.parse(event.data);
+                onDataReceived(response);
+                ws.send('btceur');
+            }
+    
+            ws.onclose = () => {
+                ws.close();
+            }
+            
+            return () => {
+                ws.close();
+            }
+        }
+    }, [id]);
 
     return (
         <>

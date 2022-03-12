@@ -21,7 +21,23 @@ namespace order_book_backend.Controllers
             _orderBookService = orderBookService;
         }
 
-        [HttpGet("/ws")]
+        [HttpGet]
+        [Route("ws/getorderbookasks")]
+        public async Task GetAsks()
+        {
+            if (HttpContext.WebSockets.IsWebSocketRequest)
+            {
+                using WebSocket webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
+                await Echo(webSocket, true);
+            }
+            else
+            {
+                HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+            }
+        }
+
+        [HttpGet]
+        [Route("ws/getorderbook")]
         public async Task Get()
         {
             if (HttpContext.WebSockets.IsWebSocketRequest)
@@ -35,7 +51,7 @@ namespace order_book_backend.Controllers
             }
         }
 
-        private async Task Echo(WebSocket webSocket)
+        private async Task Echo(WebSocket webSocket, bool onlyAsks = false)
         {
             byte[] buffer = new byte[1024];
             WebSocketReceiveResult receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
@@ -61,16 +77,18 @@ namespace order_book_backend.Controllers
                 {
                     try
                     {
-                        OrderBookResponse? response = await _orderBookService.GetAsync(currencyPair, false);
+                        OrderBook? response = await _orderBookService.GetAsync(currencyPair, !onlyAsks);
                         if (response == null)
                         {
-                            response = new OrderBookResponse
+                            response = new OrderBook
                             {
-                                Asks = new List<List<string>>()
+                                Asks = new List<OrderBookAsk>(),
+                                Bids = new List<OrderBookBid>()
                             };
                         }
 
-                        string message = JsonSerializer.Serialize(response.Asks);
+                        string message = onlyAsks ? JsonSerializer.Serialize(response.Asks) : JsonSerializer.Serialize(response);
+
                         byte[] bytes = Encoding.Default.GetBytes(message);
                         await webSocket.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, CancellationToken.None);
                     }
@@ -84,7 +102,14 @@ namespace order_book_backend.Controllers
 
                 receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
 
-                Thread.Sleep(1000);
+                if (onlyAsks)
+                {
+                    Thread.Sleep(1000);
+                }
+                else
+                {
+                    Thread.Sleep(3000);
+                }
             }
 
             await webSocket.CloseAsync(receiveResult.CloseStatus.Value, receiveResult.CloseStatusDescription, CancellationToken.None);

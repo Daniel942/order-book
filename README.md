@@ -2,7 +2,7 @@
 Project that retrieves order book data from Bitstamp and displays it in a market depth chart. It stores retrieved data in an audit log, which can be used to display previously retrieved data. In addition, user can check the current BTC price based on the requested units they wish to purchase.
 
 ## Instructions
-Open `order-book/order-book-backend/order-book-backend` and run `dotnet run`
+Open `order-book/order-book-backend/order-book-backend`. Run `dotnet ef database update` (to set up local database) and then `dotnet run`
 
 Open `order-book/order-book-frontend`.
 Run `yarn install` and then `yarn start`
